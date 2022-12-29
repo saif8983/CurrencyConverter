@@ -1,15 +1,17 @@
 import { Dimensions,View,Text ,StyleSheet} from "react-native";
-import { NativeBaseProvider ,Modal,Select,VStack,HStack,Button,Input} from "native-base";
+import { NativeBaseProvider ,Modal,Select,VStack,HStack,Button,Input,useToast,Spinner} from "native-base";
 import React, { useState ,useMemo,useEffect} from 'react';
 import CalendarPicker from 'react-native-calendar-picker';
 import { LineChart, } from "react-native-chart-kit";
 import currencyApi from "../api/currencyApi"; 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNetInfo } from "@react-native-community/netinfo";
+
 const screenWidth = Dimensions.get("window").width;
 
 const ChartDetail=({serviceFirst,serviceSecond,inputAmountValue,amount,setServiceFirst,setServiceSecond,setInputAmountValue,setAmount})=>{
   const netInfo=useNetInfo()
+  const toast=useToast()
   const [startDate, setStartDate] = useState(null);
 const [endDate,setEndDate]=useState(null)
   const [modalStartDate, setModalStartDate] = useState(false);
@@ -17,6 +19,7 @@ const [endDate,setEndDate]=useState(null)
   const [lablsOfChart,setLableOfChart]=useState(['jan','feb','mar','apr'])
   const [dataOfChart,setDataOfChart]=useState(['0','1','3','4'])
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [spiner,setSpiner]=useState(false)
    
   
   const startOfPreviousWeek = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() - selectedDate.getDay() - 6);
@@ -25,7 +28,7 @@ const start_string = start_date.toISOString().split('T')[0];
 const end_date=new Date(endDate)
 const end_string=end_date.toISOString().split('T')[0];
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'];
-const timeSeries=async()=>{
+const timeSeries=async(callback)=>{
   try{
   const response= await currencyApi.get('/timeseries',{
     
@@ -45,12 +48,15 @@ const timeSeries=async()=>{
   const inrValues = Object.values(data).map(rates => rates.INR);
   console.log(inrValues)
 setDataOfChart(inrValues)
+callback()
 } catch(error){
   console.log(error)
 }
 }
 useEffect(()=>{
- timeSeries()
+ timeSeries(()=>(
+  storeData()
+ ))
 },[startDate,endDate])
   const chartConfig = {
     backgroundGradientFrom: "#1E2923",
@@ -68,11 +74,12 @@ const data = {
       {
         data: dataOfChart,
         color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`, // optional
-        strokeWidth: 2 // optional
+        strokeWidth: 2 // optional 
       }
     ],
     legend: [`${serviceFirst}/${serviceSecond}`] // optional
   };
+  
   const handleStartDateChange = (newDate) => {
     setStartDate(newDate);
     setModalStartDate(false)
@@ -81,6 +88,7 @@ const data = {
   const handleEndDateChange = (newDate) => {
     setEndDate(newDate);
     setModalEndDate(false)
+  
   };
   const handleOpenCalenderStartDate = useMemo(() => {
     return () => {
@@ -95,26 +103,26 @@ const data = {
       
     };
   }, [modalEndDate]);
-  const storeData = async (value) => {
+  const storeData = async () => {
+   
     try {
+      const value={
+        serviceFirst:serviceFirst,
+        serviceSecond:serviceSecond,
+        inputAmountValue:inputAmountValue,
+        amount:amount
+      }
       const jsonValue = JSON.stringify(value)
-      console.log(jsonValue)
+    
+      
       await AsyncStorage.setItem('@storage_Key', jsonValue)
+      
     } catch (e) {
       console.log(e)
     }
   }
   
-  const handleStorage=()=>{
-    storeData({
-      serviceFirst:serviceFirst,
-      serviceSecond:serviceSecond,
-      lablsOfChart:lablsOfChart,
-      dataOfChart:dataOfChart,
-      inputAmountValue:inputAmountValue,
-      amount:amount
-    })
-  }
+  
   const getData = async () => {
     try {
       const jsonValue = await AsyncStorage.getItem('@storage_Key')
@@ -122,8 +130,6 @@ const data = {
       const {serviceFirst,serviceSecond,lablsOfChart,dataOfChart,inputAmountValue,amount}=jsonValueParse
       setServiceFirst(serviceFirst)
       setServiceSecond(serviceSecond)
-      setLableOfChart(lablsOfChart)
-      setDataOfChart(dataOfChart)
     setInputAmountValue(inputAmountValue)
       setAmount(amount)
     } catch(e) {
@@ -137,11 +143,28 @@ useEffect(()=>{
     console.log('not')
   }else if(netInfo.isConnected==false){
     getData()
+    handleStartDateChange(startDate)
+    handleEndDateChange(endDate)
+    
   }
-},[netInfo.isConnected])
+},[netInfo.isConnected]) 
+useEffect(()=>{
+  if(netInfo.isConnected==false){
+  if(inputAmountValue!==0){
+    setSpiner(false)
+  }else{
+    setSpiner(true)
+  }
+  
+}
+
+},[inputAmountValue,netInfo.isConnected,spiner])
 
 return(
   <NativeBaseProvider>
+  {spiner ?  ( <HStack space={8} justifyContent="center" alignItems="center">
+      <Spinner size="lg" />
+    </HStack>):null}
   <VStack alignItems="center" space={4}>
     <LineChart
   data={data}
@@ -151,7 +174,7 @@ return(
 />
 <HStack space={6} justifyContent="center" >
         <Button size="xs" style={styles.button} onPress={()=>handleOpenCalenderStartDate()}>Start date</Button>
-        <Button size="xs" style={styles.button} onPress={()=>{handleOpenCalenderEndDate(),handleStorage()}}>End date</Button>
+        <Button size="xs" style={styles.button} onPress={()=>handleOpenCalenderEndDate()}>End date</Button>
       </HStack>
 <HStack space={3} justifyContent="center" style={{height:300}}>
 <Modal style={styles.modal} isOpen={modalStartDate} >
