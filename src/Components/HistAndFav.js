@@ -1,6 +1,6 @@
 import React from 'react';
-import {View, StyleSheet,TouchableOpacity} from 'react-native';
-import { HStack,Text,FlatList,NativeBaseProvider,Heading,ScrollView,Toast,Box } from 'native-base';
+import { StyleSheet,TouchableOpacity} from 'react-native';
+import { HStack,Text,FlatList,NativeBaseProvider,Heading,Toast} from 'native-base';
 import ToastComponent from './Toast';
 import { AntDesign } from '@expo/vector-icons';
 const HistAndFav = ({state,removeFunc,handleCurrency,headingTitle}) => {
