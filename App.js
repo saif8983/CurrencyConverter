@@ -1,40 +1,30 @@
 import { createAppContainer } from "react-navigation";
 import { createStackNavigator } from "react-navigation-stack";
-import HomeScreen from "./src/screens/HomeScreen";
-import componentScreen from "./src/screens/componentScreen";
-import ListScreen from "./src/screens/List";
-import ImageScreen from "./src/screens/imageScreen";
-import CounterScreen from "./src/screens/counterScreen";
-import ColorScreen from "./src/screens/colorSreen";
-import SquareScreen from "./src/screens/squareScreen";
-import TextSreen from "./src/screens/textScreen";
-import {store} from './redux/store'
-import { Provider } from "react-redux";
+import MainScreen from "./src/screens/MainScreen";
+import WatchlistScreen from "./src/screens/WatchlistScreen";
+import HistoryScreen from "./src/screens/HistoryScreen";
+ 
 
 const StackNavigator = createStackNavigator(
   {
-    Home: HomeScreen,
-    Component:componentScreen,
-    List:ListScreen,
-    Image:ImageScreen,
-    Counter:CounterScreen,
-    Color:ColorScreen,
-    Square:SquareScreen,
-    Text:TextSreen
+  
+    Main:MainScreen,
+    WatchList:WatchlistScreen,
+    History:HistoryScreen
   },
   {
-    initialRouteName: "Home",
+    initialRouteName: "Main",
     defaultNavigationOptions: {
-      title: "App",
+      title: "Currency Converter",
     },
   }
 );
 const AppContainer=createAppContainer(StackNavigator)
 const App = () => {
   return (
-<Provider store={store}>
+
   <AppContainer/>
-  </Provider>
+ 
   )
 };
 
